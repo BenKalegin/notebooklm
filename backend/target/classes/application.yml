@@ -2,7 +2,7 @@ spring:
   application:
     name: notebooklm-backend
   datasource:
-    url: jdbc:postgresql://localhost:5432/notebooklm
+    url: jdbc:postgresql://localhost:5433/notebooklm
     username: user
     password: password
   jpa:

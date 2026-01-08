@@ -57,6 +57,27 @@ body {
   height: 50px;
 }
 
+.examples-dropdown {
+  position: relative;
+  width: fit-content;
+}
+
+.examples-dropdown select {
+  width: 100px;
+  padding: 5px;
+  appearance: none;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.examples-dropdown select:focus {
+  width: 300px;
+  position: absolute;
+  z-index: 1000;
+  background: white;
+}
+
 .sources {
   margin-top: 10px;
   font-size: 0.9em;

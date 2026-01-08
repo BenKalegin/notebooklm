@@ -65,10 +65,14 @@ const App = () => {
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return
     setUploading(true)
-    const formData = new FormData()
-    formData.append('file', e.target.files[0])
+    
     try {
-      await axios.post('/api/docs', formData)
+      for (let i = 0; i < e.target.files.length; i++) {
+        const file = e.target.files[i]
+        const formData = new FormData()
+        formData.append('file', file)
+        await axios.post('/api/docs', formData)
+      }
       fetchDocs()
     } catch (err) {
       alert('Upload failed')
@@ -122,15 +126,16 @@ const App = () => {
     if (!selectedQuestion) return;
     
     setInput(selectedQuestion);
-    // Reset select
+    // Reset select and close dropdown
     e.target.value = "";
+    e.target.blur();
   }
 
   return (
     <div className="container">
       <div className="sidebar">
         <h3>Documents</h3>
-        <input type="file" onChange={handleUpload} disabled={uploading} />
+        <input type="file" onChange={handleUpload} disabled={uploading} multiple webkitdirectory />
         {uploading && <div>Uploading...</div>}
         <ul>
           {documents.map(d => (
@@ -170,12 +175,14 @@ const App = () => {
               ))}
             </div>
             <div className="input-area">
-              <select onChange={handleExampleSelect} defaultValue="" style={{marginBottom: '10px', width: '100%', padding: '5px'}}>
-                <option value="" disabled>Examples</option>
-                {exampleQuestions.map((q, i) => (
-                  <option key={i} value={q}>{q}</option>
-                ))}
-              </select>
+              <div className="examples-dropdown">
+                <select onChange={handleExampleSelect} defaultValue="">
+                  <option value="" disabled>Examples</option>
+                  {exampleQuestions.map((q, i) => (
+                    <option key={i} value={q}>{q}</option>
+                  ))}
+                </select>
+              </div>
               <textarea value={input} onChange={e => setInput(e.target.value)} />
               <button onClick={() => sendMessage()}>Send</button>
             </div>
