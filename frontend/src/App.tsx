@@ -26,6 +26,11 @@ const App = () => {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [selectedDocId, setSelectedDocId] = useState<string | null>(null)
+  const [docContent, setDocContent] = useState<string>('')
+  const [sidebarWidth, setSidebarWidth] = useState(250)
+  const [previewWidth, setPreviewWidth] = useState(400)
+  const [isResizing, setIsResizing] = useState<'sidebar' | 'preview' | null>(null)
 
   const exampleQuestions = [
     "Shipments from Acme Industrial to Stark vs Wayne",
@@ -131,15 +136,53 @@ const App = () => {
     e.target.blur();
   }
 
+  const handleDocClick = async (docId: string) => {
+    setSelectedDocId(docId)
+    try {
+      const res = await axios.get(`/api/docs/${docId}/raw`)
+      setDocContent(res.data)
+    } catch (e) { console.error(e) }
+  }
+
+  const handleMouseDown = (type: 'sidebar' | 'preview') => {
+    setIsResizing(type)
+  }
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (isResizing === 'sidebar') {
+      setSidebarWidth(Math.max(200, Math.min(500, e.clientX)))
+    } else if (isResizing === 'preview') {
+      setPreviewWidth(Math.max(300, Math.min(600, window.innerWidth - e.clientX)))
+    }
+  }
+
+  const handleMouseUp = () => {
+    setIsResizing(null)
+  }
+
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove)
+        document.removeEventListener('mouseup', handleMouseUp)
+      }
+    }
+  }, [isResizing])
+
   return (
     <div className="container">
-      <div className="sidebar">
+      <div className="sidebar" style={{width: sidebarWidth}}>
         <h3>Documents</h3>
         <input type="file" onChange={handleUpload} disabled={uploading} multiple webkitdirectory />
         {uploading && <div>Uploading...</div>}
         <ul>
           {documents.map(d => (
-            <li key={d.id}>{d.title} ({d.status})</li>
+            <li key={d.id} onClick={() => handleDocClick(d.id)} 
+                style={{cursor: 'pointer', fontWeight: d.id === selectedDocId ? 'bold' : 'normal'}}>
+              {d.title} ({d.status})
+            </li>
           ))}
         </ul>
         <hr />
@@ -154,6 +197,7 @@ const App = () => {
           ))}
         </ul>
       </div>
+      <div className="resizer" onMouseDown={() => handleMouseDown('sidebar')}></div>
       <div className="main">
         {currentChatId ? (
           <>
@@ -165,7 +209,7 @@ const App = () => {
                     <div className="sources">
                       <strong>Sources:</strong>
                       {m.sources.map((s: any, idx: number) => (
-                        <div key={idx} className="source-item">
+                        <div key={idx} className="source-item" onClick={() => handleDocClick(s.document_id)}>
                            Doc: {s.document_id ? s.document_id.substring(0,8) : 'Unknown'}... "{s.quote}"
                         </div>
                       ))}
@@ -191,6 +235,20 @@ const App = () => {
           <div>Select or create a chat</div>
         )}
       </div>
+      {selectedDocId && (
+        <>
+          <div className="resizer" onMouseDown={() => handleMouseDown('preview')}></div>
+          <div className="doc-preview" style={{width: previewWidth}}>
+            <div className="doc-preview-header">
+              <h3>Document Preview</h3>
+              <button onClick={() => setSelectedDocId(null)}>×</button>
+            </div>
+            <div className="doc-preview-content">
+              <Markdown>{docContent}</Markdown>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }

@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.*;
+import java.util.Objects;
 
 @Service
 public class ChatService {
@@ -132,7 +133,36 @@ public class ChatService {
         // 6. Parse
         AssistantResponse response;
         try {
-             response = outputParser.parse(content);
+             AssistantResponse rawResponse = outputParser.parse(content);
+             
+             // Map document IDs in citations from internal IDs to UUIDs
+             List<AssistantResponse.Citation> mappedCitations = rawResponse.citations().stream()
+                 .map(citation -> {
+                     String docId = citation.document_id();
+                     
+                     // Try exact match first
+                     List<Document> docs = documentRepository.findByUserIdAndInternalId(userId, "id: " + docId);
+                     
+                     // If not found and looks like a partial ID (contains DOC-), try partial match
+                     if (docs.isEmpty() && docId.contains("DOC-")) {
+                         String partialId = docId.substring(docId.indexOf("DOC-"));
+                         docs = documentRepository.findByUserIdAndInternalId(userId, "id: " + partialId);
+                     }
+                     
+                     String mappedDocId;
+                     if (docs.isEmpty()) {
+                         System.err.println("WARNING: Could not find document with internal ID: " + docId);
+                         mappedDocId = docId;
+                     } else {
+                         mappedDocId = docs.get(0).getId().toString();
+                         System.out.println("Mapped " + docId + " -> " + mappedDocId);
+                     }
+                     
+                     return new AssistantResponse.Citation(mappedDocId, citation.chunk_id(), citation.quote());
+                 })
+                 .toList();
+             
+             response = new AssistantResponse(rawResponse.answer_markdown(), mappedCitations, rawResponse.confidence());
         } catch (Exception e) {
             response = new AssistantResponse("Error parsing model response: " + e.getMessage() + "\nRaw: " + content, List.of(), "LOW");
         }
