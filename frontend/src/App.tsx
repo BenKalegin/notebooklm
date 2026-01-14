@@ -175,7 +175,7 @@ const App = () => {
     <div className="container">
       <div className="sidebar" style={{width: sidebarWidth}}>
         <h3>Documents</h3>
-        <input type="file" onChange={handleUpload} disabled={uploading} multiple webkitdirectory />
+        <input type="file" onChange={handleUpload} disabled={uploading} multiple {...({ webkitdirectory: "", directory: "" } as any)} />
         {uploading && <div>Uploading...</div>}
         <ul>
           {documents.map(d => (

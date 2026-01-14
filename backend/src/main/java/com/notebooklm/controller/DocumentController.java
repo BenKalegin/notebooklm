@@ -21,10 +21,24 @@ public class DocumentController {
     }
 
     @PostMapping
-    public ResponseEntity<Document> upload(@RequestParam("file") MultipartFile file) throws Exception {
+    public ResponseEntity<?> upload(@RequestParam("file") MultipartFile[] files) throws Exception {
         UUID userId = UserContext.getCurrentUser().getId();
-        Document doc = documentService.upload(userId, file);
-        return ResponseEntity.ok(doc);
+
+        if (files.length == 1) {
+            Document doc = documentService.upload(userId, files[0]);
+            return ResponseEntity.ok(doc);
+        }
+
+        List<Document> documents = new java.util.ArrayList<>();
+        for (MultipartFile file : files) {
+            try {
+                Document doc = documentService.upload(userId, file);
+                documents.add(doc);
+            } catch (Exception e) {
+                System.err.println("Failed to upload " + file.getOriginalFilename() + ": " + e.getMessage());
+            }
+        }
+        return ResponseEntity.ok(documents);
     }
     
     @GetMapping

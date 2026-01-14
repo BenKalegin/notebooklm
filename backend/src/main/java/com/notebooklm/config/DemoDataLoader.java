@@ -40,7 +40,7 @@ public class DemoDataLoader implements CommandLineRunner {
         userRepository.save(demoUser);
 
         // Import demo documents
-        Path demoPath = Paths.get("demo");
+        Path demoPath = Paths.get("../demo");
         if (!Files.exists(demoPath)) {
             System.out.println("Demo folder not found, skipping demo data import");
             return;
