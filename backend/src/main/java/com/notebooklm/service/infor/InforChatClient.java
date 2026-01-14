@@ -4,7 +4,6 @@ import org.springframework.ai.chat.ChatClient;
 import org.springframework.ai.chat.ChatResponse;
 import org.springframework.ai.chat.Generation;
 import org.springframework.ai.chat.messages.Message;
-import org.springframework.ai.chat.metadata.ChatGenerationMetadata;
 import org.springframework.ai.chat.prompt.Prompt;
 
 import java.util.List;
@@ -14,6 +13,7 @@ public class InforChatClient implements ChatClient {
 
     private final InforGenAIClient client;
     private final String modelPrefix;
+    public Integer lastTotalTokens;
 
     public InforChatClient(InforGenAIClient client, String modelPrefix) {
         this.client = client;
@@ -42,19 +42,13 @@ public class InforChatClient implements ChatClient {
             content = response.toString();
         }
 
-        // Create Generation with metadata
-        Generation generation = new Generation(content);
-
-        // Add metadata if available
-        Map<String, Object> usage = (Map<String, Object>) response.get("usage");
-        if (usage != null) {
-            generation = new Generation(content, Map.of(
-                "prompt_tokens", usage.getOrDefault("prompt_tokens", 0),
-                "completion_tokens", usage.getOrDefault("completion_tokens", 0),
-                "total_tokens", usage.getOrDefault("total_tokens", 0)
-            ));
+        // Extract token usage
+        Map<String, Object> tokenUsage = (Map<String, Object>) response.get("token_usage");
+        if (tokenUsage != null) {
+            lastTotalTokens = (Integer) tokenUsage.get("total");
         }
 
+        Generation generation = new Generation(content);
         return new ChatResponse(List.of(generation));
     }
 }

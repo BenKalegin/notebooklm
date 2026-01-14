@@ -17,13 +17,14 @@ interface Message {
   role: string
   content: string
   sources?: any[]
+  tokens?: number
 }
 
 const App = () => {
   const [documents, setDocuments] = useState<Document[]>([])
-  const [chats, setChats] = useState<Chat[]>([])
   const [currentChatId, setCurrentChatId] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
+  const [totalTokens, setTotalTokens] = useState(0)
   const [input, setInput] = useState('')
   const [uploading, setUploading] = useState(false)
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null)
@@ -58,7 +59,12 @@ const App = () => {
   const fetchChats = async () => {
     try {
       const res = await axios.get('/api/chats')
-      setChats(res.data)
+      if (res.data.length > 0) {
+        setCurrentChatId(res.data[0].id)
+      } else {
+        const newChat = await axios.post('/api/chats', { title: 'Chat' })
+        setCurrentChatId(newChat.data.id)
+      }
     } catch (e) { console.error(e) }
   }
 
@@ -66,6 +72,14 @@ const App = () => {
     fetchDocs()
     fetchChats()
   }, [])
+
+  useEffect(() => {
+    if (currentChatId) {
+      axios.get(`/api/chats/${currentChatId}`)
+        .then(res => setMessages(res.data))
+        .catch(e => console.error(e))
+    }
+  }, [currentChatId])
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return
@@ -87,23 +101,6 @@ const App = () => {
     }
   }
 
-  const createChat = async () => {
-    try {
-      const res = await axios.post('/api/chats', { title: 'New Chat' })
-      setChats([res.data, ...chats])
-      setCurrentChatId(res.data.id)
-      setMessages([])
-    } catch (e) { console.error(e) }
-  }
-
-  const loadChat = async (chatId: string) => {
-    setCurrentChatId(chatId)
-    try {
-      const res = await axios.get(`/api/chats/${chatId}`)
-      setMessages(res.data)
-    } catch (e) { console.error(e) }
-  }
-
   const sendMessage = async (overrideMessage?: string) => {
     const messageToSend = overrideMessage || input;
     if (!messageToSend.trim() || !currentChatId) return;
@@ -114,12 +111,15 @@ const App = () => {
     
     try {
       const res = await axios.post(`/api/chats/${currentChatId}/messages`, { message: userMsg.content })
+      const tokens = res.data.total_tokens || 0
       const assistantMsg = { 
           role: 'ASSISTANT', 
           content: res.data.answer_markdown,
-          sources: res.data.citations 
+          sources: res.data.citations,
+          tokens
       }
       setMessages(prev => [...prev, assistantMsg])
+      setTotalTokens(prev => prev + tokens)
     } catch (err) {
       alert('Failed to send message')
       console.error(err)
@@ -185,17 +185,6 @@ const App = () => {
             </li>
           ))}
         </ul>
-        <hr />
-        <h3>Chats</h3>
-        <button onClick={createChat}>+ New Chat</button>
-        <ul>
-          {chats.map(c => (
-            <li key={c.id} onClick={() => loadChat(c.id)} 
-                style={{fontWeight: c.id === currentChatId ? 'bold' : 'normal', cursor: 'pointer'}}>
-              {c.title}
-            </li>
-          ))}
-        </ul>
       </div>
       <div className="resizer" onMouseDown={() => handleMouseDown('sidebar')}></div>
       <div className="main">
@@ -219,6 +208,7 @@ const App = () => {
               ))}
             </div>
             <div className="input-area">
+              <div className="token-counter">Total tokens: {totalTokens}</div>
               <div className="examples-dropdown">
                 <select onChange={handleExampleSelect} defaultValue="">
                   <option value="" disabled>Examples</option>
@@ -232,7 +222,7 @@ const App = () => {
             </div>
           </>
         ) : (
-          <div>Select or create a chat</div>
+          <div>Loading chat...</div>
         )}
       </div>
       {selectedDocId && (

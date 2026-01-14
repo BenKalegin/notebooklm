@@ -128,7 +128,12 @@ public class ChatService {
         Prompt prompt = new Prompt(List.of(systemMessage, contextMessage, userMessage));
         
         // 5. Call AI
-        String content = chatClient.call(prompt).getResult().getOutput().getContent();
+        var chatResponse = chatClient.call(prompt);
+        String content = chatResponse.getResult().getOutput().getContent();
+        Integer totalTokens = null;
+        if (chatClient instanceof com.notebooklm.service.infor.InforChatClient inforClient) {
+            totalTokens = inforClient.lastTotalTokens;
+        }
         
         // 6. Parse
         AssistantResponse response;
@@ -174,9 +179,9 @@ public class ChatService {
                  })
                  .toList();
              
-             response = new AssistantResponse(rawResponse.answer_markdown(), mappedCitations, rawResponse.confidence());
+             response = new AssistantResponse(rawResponse.answer_markdown(), mappedCitations, rawResponse.confidence(), totalTokens);
         } catch (Exception e) {
-            response = new AssistantResponse("Error parsing model response: " + e.getMessage() + "\nRaw: " + content, List.of(), "LOW");
+            response = new AssistantResponse("Error parsing model response: " + e.getMessage() + "\nRaw: " + content, List.of(), "LOW", totalTokens);
         }
         
         // 7. Save Assistant Message & Retrievals
