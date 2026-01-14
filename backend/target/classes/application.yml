@@ -18,7 +18,7 @@ spring:
 
   ai:
     openai:
-      api-key: ${OPENAI_API_KEY}
+      api-key: ${OPENAI_API_KEY:sk-dummy-key-for-embeddings}
       chat:
         options:
           model: gpt-3.5-turbo
@@ -27,6 +27,17 @@ spring:
           model: text-embedding-ada-002
 
 app:
+  ai:
+    provider: ${AI_PROVIDER:infor}
+  infor:
+    tenant-id: ${INFOR_TENANT_ID:}
+    client-id: ${INFOR_CLIENT_ID:}
+    client-secret: ${INFOR_CLIENT_SECRET:}
+    username: ${INFOR_USERNAME:}
+    password: ${INFOR_PASSWORD:}
+    token-url: ${INFOR_TOKEN_URL:}
+    api-url: ${INFOR_API_URL:}
+    llm-model: ${INFOR_LLM_MODEL:anthropic.claude-sonnet-20241022-v2:0}
   chunking:
     target-size: 1000
     overlap: 100

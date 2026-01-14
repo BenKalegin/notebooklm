@@ -133,7 +133,19 @@ public class ChatService {
         // 6. Parse
         AssistantResponse response;
         try {
-             AssistantResponse rawResponse = outputParser.parse(content);
+             // Strip markdown code blocks if present
+             String cleanContent = content.trim();
+             if (cleanContent.startsWith("```json")) {
+                 cleanContent = cleanContent.substring(7);
+             } else if (cleanContent.startsWith("```")) {
+                 cleanContent = cleanContent.substring(3);
+             }
+             if (cleanContent.endsWith("```")) {
+                 cleanContent = cleanContent.substring(0, cleanContent.length() - 3);
+             }
+             cleanContent = cleanContent.trim();
+             
+             AssistantResponse rawResponse = outputParser.parse(cleanContent);
              
              // Map document IDs in citations from internal IDs to UUIDs
              List<AssistantResponse.Citation> mappedCitations = rawResponse.citations().stream()
