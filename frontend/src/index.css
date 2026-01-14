@@ -88,6 +88,23 @@ body {
   margin-bottom: 15px;
   padding: 10px;
   border-radius: 8px;
+  position: relative;
+}
+
+.resend-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 2px 6px;
+  font-size: 16px;
+}
+
+.resend-btn:hover {
+  background: #f0f0f0;
 }
 
 .message.user {
@@ -149,4 +166,10 @@ body {
   cursor: pointer;
   color: blue;
   text-decoration: underline;
+}
+
+.message-stats {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #888;
 }

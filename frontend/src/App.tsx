@@ -18,13 +18,15 @@ interface Message {
   content: string
   sources?: any[]
   tokens?: number
+  timeMs?: number
 }
 
 const App = () => {
   const [documents, setDocuments] = useState<Document[]>([])
   const [currentChatId, setCurrentChatId] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
-  const [totalTokens, setTotalTokens] = useState(0)
+  const [lastQueryTokens, setLastQueryTokens] = useState(0)
+  const [lastQueryTime, setLastQueryTime] = useState(0)
   const [input, setInput] = useState('')
   const [uploading, setUploading] = useState(false)
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null)
@@ -109,17 +111,21 @@ const App = () => {
     setMessages(prev => [...prev, userMsg])
     if (!overrideMessage) setInput('')
     
+    const startTime = Date.now()
     try {
       const res = await axios.post(`/api/chats/${currentChatId}/messages`, { message: userMsg.content })
+      const timeMs = Date.now() - startTime
       const tokens = res.data.total_tokens || 0
       const assistantMsg = { 
           role: 'ASSISTANT', 
           content: res.data.answer_markdown,
           sources: res.data.citations,
-          tokens
+          tokens,
+          timeMs
       }
       setMessages(prev => [...prev, assistantMsg])
-      setTotalTokens(prev => prev + tokens)
+      setLastQueryTokens(tokens)
+      setLastQueryTime(timeMs)
     } catch (err) {
       alert('Failed to send message')
       console.error(err)
@@ -193,6 +199,9 @@ const App = () => {
             <div className="chat-messages">
               {messages.map((m, i) => (
                 <div key={i} className={`message ${m.role.toLowerCase()}`}>
+                  {m.role === 'USER' && (
+                    <button className="resend-btn" onClick={() => sendMessage(m.content)}>↻</button>
+                  )}
                   <Markdown>{m.content}</Markdown>
                   {m.sources && m.sources.length > 0 && (
                     <div className="sources">
@@ -208,7 +217,7 @@ const App = () => {
               ))}
             </div>
             <div className="input-area">
-              <div className="token-counter">Total tokens: {totalTokens}</div>
+              <div className="token-counter">Tokens: {lastQueryTokens} | Time: {lastQueryTime}ms</div>
               <div className="examples-dropdown">
                 <select onChange={handleExampleSelect} defaultValue="">
                   <option value="" disabled>Examples</option>

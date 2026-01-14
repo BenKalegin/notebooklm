@@ -157,6 +157,15 @@ public class ChatService {
                  .map(citation -> {
                      String docId = citation.document_id();
                      
+                     // Check if it's already a UUID
+                     try {
+                         UUID.fromString(docId);
+                         // It's already a UUID, use as-is
+                         return citation;
+                     } catch (IllegalArgumentException e) {
+                         // Not a UUID, try to map from internal ID
+                     }
+                     
                      // Try exact match first
                      List<Document> docs = documentRepository.findByUserIdAndInternalId(userId, "id: " + docId);
                      
