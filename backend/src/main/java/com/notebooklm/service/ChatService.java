@@ -106,7 +106,7 @@ public class ChatService {
         BeanOutputParser<AssistantResponse> outputParser = new BeanOutputParser<>(AssistantResponse.class);
         
         String systemText = """
-            You are a QA assistant that answers ONLY using the provided context chunks.
+            You are a helpful assistant that answers questions ONLY using the provided context chunks.
             If context does not contain the answer, say you don't know based on uploaded documents.
             Do not use external knowledge.
             Provide citations for each key statement.

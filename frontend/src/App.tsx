@@ -150,9 +150,9 @@ const App = () => {
 
   const handleMouseMove = (e: MouseEvent) => {
     if (isResizing === 'sidebar') {
-      setSidebarWidth(Math.max(200, Math.min(500, e.clientX)))
+      setSidebarWidth(Math.max(200, Math.min(800, e.clientX)))
     } else if (isResizing === 'preview') {
-      setPreviewWidth(Math.max(300, Math.min(600, window.innerWidth - e.clientX)))
+      setPreviewWidth(Math.max(300, Math.min(1000, window.innerWidth - e.clientX)))
     }
   }
 
