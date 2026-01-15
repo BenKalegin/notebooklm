@@ -81,6 +81,12 @@ public class ChatService {
         // 2. Retrieve
         List<RetrievalService.RetrievedChunk> chunks = retrievalService.search(userId, null, userMessageText, topK);
         
+        System.out.println("RAG Request - Retrieved " + chunks.size() + " chunks");
+        for (int i = 0; i < Math.min(3, chunks.size()); i++) {
+            RetrievalService.RetrievedChunk chunk = chunks.get(i);
+            System.out.println("Chunk " + (i+1) + ": docId=" + chunk.docId() + ", distance=" + chunk.distance() + ", text=" + chunk.chunkText().substring(0, Math.min(100, chunk.chunkText().length())) + "...");
+        }
+        
         // 3. Construct Context
         StringBuilder context = new StringBuilder();
         

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import axios from 'axios'
 import Markdown from 'react-markdown'
 
@@ -34,6 +34,7 @@ const App = () => {
   const [sidebarWidth, setSidebarWidth] = useState(250)
   const [previewWidth, setPreviewWidth] = useState(400)
   const [isResizing, setIsResizing] = useState<'sidebar' | 'preview' | null>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const exampleQuestions = [
     "Shipments from Acme Industrial to Stark vs Wayne",
@@ -82,6 +83,10 @@ const App = () => {
         .catch(e => console.error(e))
     }
   }, [currentChatId])
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return
@@ -215,6 +220,7 @@ const App = () => {
                   )}
                 </div>
               ))}
+              <div ref={messagesEndRef} />
             </div>
             <div className="input-area">
               <div className="token-counter">Tokens: {lastQueryTokens} | Time: {lastQueryTime}ms</div>
@@ -226,7 +232,16 @@ const App = () => {
                   ))}
                 </select>
               </div>
-              <textarea value={input} onChange={e => setInput(e.target.value)} />
+              <textarea 
+                value={input} 
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    sendMessage()
+                  }
+                }}
+              />
               <button onClick={() => sendMessage()}>Send</button>
             </div>
           </>
